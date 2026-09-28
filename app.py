@@ -17,7 +17,9 @@ CORS(app)
 def home():
     return send_file('neindex.html')
 
-
+@app.route('/wp.jpg')
+def serve_image():
+    return send_file('wp.jpg')
 
 
 # Initialize the Groq client
