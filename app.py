@@ -13,6 +13,13 @@ load_dotenv()
 app = Flask(__name__)
 CORS(app)
 
+@app.route('/')
+def home():
+    return send_file('neindex.html')
+
+
+
+
 # Initialize the Groq client
 client = Groq(api_key=os.environ.get("GROQ_API_KEY"))
 
