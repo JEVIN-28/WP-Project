@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Waste Passport Ecosystem</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <!-- QR Code Scanner Library -->
+  <script src="https://unpkg.com/html5-qrcode"></script>
+  
+  <style>
+    /* Global Styles & Theme based on UI Mockup */
+    :root { --primary: #16a34a; --primary-hover: #15803d; --bg: #f8fafc; --text: #1f2937; --card-bg: #ffffff; }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
+    body { background-color: var(--bg); color: var(--text); line-height: 1.6; }
+    
+    /* Navbar */
+    nav { background: var(--card-bg); padding: 15px 40px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+    .logo { font-size: 1.5rem; font-weight: 700; color: var(--primary); text-decoration: none; cursor: pointer; }
+    
+    /* View Containers */
+    .view-section { display: none; max-width: 1000px; margin: 40px auto; padding: 20px; animation: fadeIn 0.3s ease-in; }
+    .active-view { display: block; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+    /* Cards & Layout */
+    .card { background: var(--card-bg); padding: 40px; border-radius: 16px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); text-align: center; margin-bottom: 20px; border: 1px solid #e2e8f0; }
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+    
+    /* Typography */
+    h1 { font-size: 3rem; color: var(--primary); margin-bottom: 10px; line-height: 1.2; }
+    h2 { font-size: 1.8rem; margin-bottom: 20px; }
+    p.subtitle { font-size: 1.1rem; color: #64748b; margin-bottom: 30px; }
+
+    /* Inputs & Buttons */
+    input { width: 100%; padding: 14px; font-size: 1rem; border: 2px solid #e2e8f0; border-radius: 8px; margin-bottom: 15px; outline: none; transition: border 0.2s; }
+    input:focus { border-color: var(--primary); }
+    button { background: var(--primary); color: white; border: none; padding: 14px 24px; font-size: 1rem; font-weight: 600; border-radius: 8px; cursor: pointer; width: 100%; transition: background 0.2s; }
+    button:hover { background: var(--primary-hover); }
+    button.outline { background: transparent; color: var(--primary); border: 2px solid var(--primary); }
+    button.outline:hover { background: var(--primary); color: white; }
+
+    /* Result Displays */
+    .result-box { display: none; text-align: left; background: #f0fdf4; padding: 20px; border-radius: 8px; border-left: 5px solid var(--primary); margin-top: 20px; }
+    .qr-img { display: none; margin: 20px auto; max-width: 200px; border-radius: 8px; border: 1px solid #e2e8f0; }
+    
+    /* QR Scanner UI */
+    #reader { width: 100%; max-width: 400px; margin: 0 auto; border-radius: 8px; overflow: hidden; }
+  </style>
+</head>
+<body>
+
+  <!-- Navigation -->
+  <nav>
+    <a class="logo" onclick="switchView('view-home')">♻️ Waste Passport</a>
+    <button onclick="switchView('view-home')" style="width: auto; padding: 8px 16px;">Home</button>
+  </nav>
+
+  <!-- ==============================
+       VIEW 1: INITIAL SELECTION
+       ============================== -->
+  <div id="view-home" class="view-section active-view">
+    <div class="card" style="padding: 60px 20px;">
+      <h1>Welcome to Waste Passport</h1>
+      <p class="subtitle">Select your portal to continue</p>
+      <div class="grid-2" style="max-width: 600px; margin: 0 auto;">
+        <button class="outline" onclick="switchView('view-mfg-login')">🏭 I am a Manufacturer</button>
+        <button onclick="switchView('view-consumer')">🌱 I am a Consumer</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==============================
+       VIEW 2: MANUFACTURER LOGIN
+       ============================== -->
+  <div id="view-mfg-login" class="view-section">
+    <div class="card" style="max-width: 500px; margin: 0 auto;">
+      <h2>Manufacturer Portal</h2>
+      <p class="subtitle">Please enter your authorized Manufacturer ID.</p>
+      <!-- Hint for judges -->
+      <p style="font-size: 0.8rem; color: #94a3b8; margin-top: -20px; margin-bottom: 20px;">(Hint for Hackathon: Type <b>ADMIN123</b>)</p>
+      <input type="password" id="mfgIdInput" placeholder="Enter Manufacturer ID" />
+      <button onclick="loginMfg()">Access Dashboard</button>
+    </div>
+  </div>
+
+  <!-- ==============================
+       VIEW 3: MANUFACTURER DASHBOARD
+       ============================== -->
+  <div id="view-mfg-dash" class="view-section">
+    <div class="card">
+      <h2>Generate Product Passports</h2>
+      <p class="subtitle">Assign a secure QR code to a new product batch.</p>
+      <div style="max-width: 500px; margin: 0 auto;">
+        <input type="text" id="mfgProductId" placeholder="Enter Product SKU (e.g., WP-KEY-003)" />
+        <button onclick="generateQR()">Generate QR Code</button>
+        <img id="mfgQrImage" class="qr-img" alt="Generated QR" />
+      </div>
+    </div>
+  </div>
+
+  <!-- ==============================
+       VIEW 4: CONSUMER PORTAL
+       ============================== -->
+  <div id="view-consumer" class="view-section">
+    
+    <!-- Hero Header based on Mockup -->
+    <div style="text-align: center; margin-bottom: 40px;">
+      <h1 style="color: #1f2937;">Small Actions.<br><span style="color: var(--primary);">Big Impact.</span></h1>
+      <p style="font-weight: 600; font-size: 1.2rem; margin-top: 10px;">Scan. Discover. Reuse. Recycle.</p>
+      <p class="subtitle">Your Waste Passport helps you find the right way to dispose, recycle or reuse everyday products.</p>
+    </div>
+
+    <div class="grid-2">
+      <!-- Feature A: QR Scan & ID Lookup -->
+      <div class="card">
+        <h3>Lookup Passport</h3>
+        <p style="font-size: 0.9rem; color: #64748b; margin-bottom: 15px;">Scan a QR code or enter an ID manually.</p>
+        
+        <button onclick="startScanner()" class="outline" style="margin-bottom: 15px;">📷 Request Camera to Scan QR</button>
+        <div id="reader"></div> <!-- Camera feed shows here -->
+        
+        <p style="margin: 15px 0; color: #94a3b8;">— OR —</p>
+        
+        <input type="text" id="consumerIdInput" placeholder="Enter Product ID manually..." />
+        <button onclick="fetchPassport()">Search Passport</button>
+
+        <div id="passportResult" class="result-box">
+          <h4 id="resName" style="font-size: 1.2rem;"></h4>
+          <p><strong>Category:</strong> <span id="resCat"></span></p>
+          <p><strong>Instructions:</strong> <span id="resInst"></span></p>
+          <p><strong>Drop-off:</strong> <span id="resDrop"></span></p>
+        </div>
+      </div>
+
+      <!-- Feature B: Ask AI -->
+      <div class="card">
+        <h3>Ask AI Assistant</h3>
+        <p style="font-size: 0.9rem; color: #64748b; margin-bottom: 15px;">Have older waste without a passport? Describe it below.</p>
+        <input type="text" id="aiQueryInput" placeholder="e.g. Broken laptop with battery" />
+        <button onclick="askAI()" id="aiBtn">Classify Waste</button>
+
+        <div id="aiResult" class="result-box" style="border-color: #3b82f6; background: #eff6ff;">
+          <h4 id="aiItem" style="font-size: 1.2rem;"></h4>
+          <p><strong>Category:</strong> <span id="aiCat"></span></p>
+          <p><strong>How to separate:</strong> <span id="aiSep"></span></p>
+          <p><strong>Action:</strong> <span id="aiAct"></span></p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==============================
+       JAVASCRIPT LOGIC
+       ============================== -->
+  <script>
+    const API_BASE = 'http://127.0.0.1:5000/api';
+
+    // 1. View Switcher logic (SPA)
+    function switchView(viewId) {
+      document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active-view'));
+      document.getElementById(viewId).classList.add('active-view');
+      
+      // Stop camera if navigating away from consumer page
+      if (viewId !== 'view-consumer' && html5QrcodeScanner) {
+        try { html5QrcodeScanner.clear(); } catch(e) {}
+      }
+    }
+
+    // 2. Manufacturer Login Logic
+    function loginMfg() {
+      const id = document.getElementById('mfgIdInput').value;
+      if (id === 'ADMIN123') { // Simple hardcoded auth for hackathon
+        switchView('view-mfg-dash');
+        document.getElementById('mfgIdInput').value = ''; 
+      } else {
+        alert('Invalid Manufacturer ID. (Try: ADMIN123)');
+      }
+    }
+
+    // 3. Generate QR (Manufacturer)
+    function generateQR() {
+      const id = document.getElementById('mfgProductId').value.trim();
+      if (!id) { alert("Enter a Product ID"); return; }
+      const img = document.getElementById('mfgQrImage');
+      img.src = `${API_BASE}/qr/${id}?t=${Date.now()}`;
+      img.style.display = 'block';
+    }
+
+    // 4. Fetch Passport (Consumer)
+    async function fetchPassport() {
+      const id = document.getElementById('consumerIdInput').value.trim();
+      if (!id) return;
+      try {
+        const res = await fetch(`${API_BASE}/passport/${id}`);
+        if (!res.ok) throw new Error("Not Found");
+        const data = await res.json();
+        
+        document.getElementById('resName').innerText = data.name;
+        document.getElementById('resCat').innerText = data.category;
+        document.getElementById('resInst').innerText = data.instructions;
+        document.getElementById('resDrop').innerText = data.collectionPoint;
+        document.getElementById('passportResult').style.display = 'block';
+      } catch (error) {
+        alert("Passport not found. Make sure the ID matches your Python database.");
+      }
+    }
+
+    // 5. Ask AI (Consumer)
+    async function askAI() {
+      const query = document.getElementById('aiQueryInput').value.trim();
+      if (!query) return;
+      const btn = document.getElementById('aiBtn');
+      btn.innerText = "Analyzing..."; btn.disabled = true;
+
+      try {
+        const res = await fetch(`${API_BASE}/ai/classify`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userQuery: query })
+        });
+        const data = await res.json();
+        
+        document.getElementById('aiItem').innerText = data.detected_item || query;
+        document.getElementById('aiCat').innerText = data.waste_category;
+        document.getElementById('aiSep').innerText = data.separation_instructions;
+        document.getElementById('aiAct').innerText = data.action;
+        document.getElementById('aiResult').style.display = 'block';
+      } catch (e) {
+        alert("AI request failed.");
+      } finally {
+        btn.innerText = "Classify Waste"; btn.disabled = false;
+      }
+    }
+
+    // 6. QR Scanner Setup (Using Device Camera)
+    let html5QrcodeScanner;
+    function startScanner() {
+      // Initialize scanner on the "reader" div
+      html5QrcodeScanner = new Html5QrcodeScanner(
+        "reader", { fps: 10, qrbox: {width: 250, height: 250} }, false
+      );
+      
+      // The library automatically asks the user for camera permissions!
+      html5QrcodeScanner.render(onScanSuccess, onScanFailure);
+    }
+
+    function onScanSuccess(decodedText, decodedResult) {
+      // What happens when a QR is successfully scanned
+      document.getElementById('consumerIdInput').value = decodedText;
+      html5QrcodeScanner.clear(); // turn off camera
+      fetchPassport(); // Automatically fetch the data!
+    }
+
+    function onScanFailure(error) {
+      // handle scan failure, usually better to ignore and keep scanning
+    }
+  </script>
+</body>
+</html>

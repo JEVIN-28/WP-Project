@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Waste Passport MVP</title>
+  <style>
+    * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+    body { background-color: #f4f7f6; margin: 0; padding: 24px; color: #2d3748; }
+    .container { max-width: 720px; margin: 0 auto; }
+    h1 { text-align: center; color: #1a202c; margin-bottom: 24px; }
+    
+    .card { background: #ffffff; border-radius: 12px; padding: 20px; margin-bottom: 20px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
+    h2 { margin-top: 0; font-size: 1.25rem; color: #2b6cb0; }
+    
+    input, button { width: 100%; padding: 12px; font-size: 1rem; border-radius: 8px; border: 1px solid #cbd5e0; margin-top: 8px; }
+    button { background-color: #3182ce; color: #fff; font-weight: bold; border: none; cursor: pointer; transition: 0.2s; }
+    button:hover { background-color: #2b6cb0; }
+    
+    .passport-display { display: none; background: #ebf8ff; border-left: 5px solid #3182ce; border-radius: 8px; padding: 16px; margin-top: 16px; }
+    .badge { display: inline-block; padding: 4px 10px; border-radius: 9999px; font-size: 0.85rem; font-weight: bold; background: #e2e8f0; color: #4a5568; }
+    .badge.ewaste { background: #fed7d7; color: #9b2c2c; }
+    .badge.plastic { background: #feebc8; color: #9c4221; }
+    
+    .qr-img { display: block; margin: 16px auto; width: 180px; height: 180px; }
+    ul { padding-left: 20px; margin: 8px 0; }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <h1>♻️ Waste Passport</h1>
+
+  <!-- Feature 1: Scan / View Existing Passport -->
+  <div class="card">
+    <h2>1. View Passport by SKU / ID</h2>
+    <p>Simulate scanning a QR code or entering a product ID (Try: <code>WP-EAR-001</code>):</p>
+    <input type="text" id="passportIdInput" value="WP-EAR-001" />
+    <button onclick="fetchPassport()">Scan & Fetch Passport</button>
+
+    <div id="passportCard" class="passport-display">
+      <h3 id="productName" style="margin:0 0 8px 0;"></h3>
+      <span id="productCategory" class="badge"></span>
+      <p><strong>Materials:</strong></p>
+      <ul id="materialList"></ul>
+      <p><strong>Disposal Instructions:</strong> <span id="productInstructions"></span></p>
+      <p><strong>Nearest Drop-off:</strong> <span id="collectionPoint"></span></p>
+    </div>
+  </div>
+
+  <!-- Feature 2: Generate SKU QR Code -->
+  <div class="card">
+    <h2>2. Manufacturer SKU QR Generator</h2>
+    <p>Generate a scannable QR sticker for a registered product:</p>
+    <button onclick="generateQR()">Generate QR Code for entered ID</button>
+    <img id="qrImage" class="qr-img" style="display:none;" alt="Waste Passport QR Code" />
+  </div>
+
+  <!-- Feature 3: AI Fallback Assistant -->
+  <div class="card">
+    <h2>3. AI Waste Classifier (No QR Code)</h2>
+    <p>Unlabeled or legacy waste? Describe the object:</p>
+    <input type="text" id="aiQueryInput" placeholder="e.g. Broken remote control with AA batteries" />
+    <button onclick="askAI()">Analyze Waste</button>
+
+    <div id="aiCard" class="passport-display">
+      <h3 id="aiItem" style="margin:0 0 8px 0;"></h3>
+      <span id="aiCategory" class="badge"></span>
+      <p><strong>Detected Materials:</strong></p>
+      <ul id="aiMaterials"></ul>
+      <p><strong>Separation:</strong> <span id="aiSeparation"></span></p>
+      <p><strong>Action:</strong> <span id="aiAction"></span></p>
+    </div>
+  </div>
+</div>
+
+<script>
+  const API_BASE = 'http://127.0.0.1:5000/api';
+
+  // 1. Fetch Product Passport
+  async function fetchPassport() {
+    const id = document.getElementById('passportIdInput').value.trim();
+    if (!id) return;
+
+    const res = await fetch(`${API_BASE}/passport/${id}`);
+    if (!res.ok) {
+      alert("Passport ID not found");
+      return;
+    }
+    const data = await res.json();
+
+    document.getElementById('productName').innerText = data.name;
+    const cat = document.getElementById('productCategory');
+    cat.innerText = data.category;
+    cat.className = 'badge ' + (data.category === 'E-Waste' ? 'ewaste' : 'plastic');
+
+    const list = document.getElementById('materialList');
+    list.innerHTML = '';
+    data.materials.forEach(m => {
+      const li = document.createElement('li');
+      li.innerText = m;
+      list.appendChild(li);
+    });
+
+    document.getElementById('productInstructions').innerText = data.instructions;
+    document.getElementById('collectionPoint').innerText = data.collectionPoint;
+    document.getElementById('passportCard').style.display = 'block';
+  }
+
+  // 2. Generate QR Code
+  function generateQR() {
+    const id = document.getElementById('passportIdInput').value.trim() || 'WP-EAR-001';
+    const qrImg = document.getElementById('qrImage');
+    qrImg.src = `${API_BASE}/qr/${id}?t=${Date.now()}`;
+    qrImg.style.display = 'block';
+  }
+
+  // 3. AI Classifier
+  async function askAI() {
+    const query = document.getElementById('aiQueryInput').value.trim();
+    if (!query) return;
+
+    const btn = event.target;
+    btn.innerText = "Analyzing...";
+    btn.disabled = true;
+
+    try {
+      const res = await fetch(`${API_BASE}/ai/classify`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userQuery: query })
+      });
+      const data = await res.json();
+
+      document.getElementById('aiItem').innerText = data.detected_item || query;
+      document.getElementById('aiCategory').innerText = data.waste_category;
+      
+      const list = document.getElementById('aiMaterials');
+      list.innerHTML = '';
+      (data.materials || []).forEach(m => {
+        const li = document.createElement('li');
+        li.innerText = m;
+        list.appendChild(li);
+      });
+
+      document.getElementById('aiSeparation').innerText = data.separation_instructions;
+      document.getElementById('aiAction').innerText = data.action;
+      document.getElementById('aiCard').style.display = 'block';
+    } catch (e) {
+      alert("Failed to analyze item.");
+    } finally {
+      btn.innerText = "Analyze Waste";
+      btn.disabled = false;
+    }
+  }
+</script>
+
+</body>
+</html>

@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Waste Passport | Digital Product Identity</title>
+  
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600&family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/html5-qrcode"></script>
+  
+  <style>
+    /* Global Styles */
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body, html { width: 100%; height: 100%; font-family: 'Inter', sans-serif; overflow-x: hidden; }
+    :root { --primary: #16a34a; --primary-hover: #15803d; }
+    
+    /* Creative Home Page */
+    #home-screen {
+      width: 100vw; height: 100vh;
+      background: linear-gradient(to bottom, #dbe2e9, #b9c6d2);
+      display: flex; justify-content: center; align-items: center;
+      position: absolute; top: 0; left: 0; z-index: 10;
+    }
+    .main-card {
+      width: 85%; height: 80%; max-width: 1400px; background: #ffffff; 
+      border-radius: 12px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15);
+      display: flex; flex-direction: column; padding: 2.5rem 3rem;
+    }
+    .card-header { display: flex; justify-content: space-between; font-weight: bold; color: #064e3b; }
+    .card-body { flex: 1; display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; }
+    .hero-title { font-family: 'Playfair Display', serif; font-size: 5rem; line-height: 1.1; color: #064e3b; }
+    .hero-image-container img { width: 450px; height: auto; }
+    .hero-text-right { font-size: 0.95rem; line-height: 1.6; color: #1a202c; max-width: 320px; justify-self: flex-end; }
+    
+    .btn-group { display: flex; flex-direction: column; gap: 12px; margin-top: 25px; }
+    .btn-home {
+      padding: 12px 20px; border-radius: 50px; font-weight: bold; cursor: pointer; text-align: center;
+      font-size: 1rem; transition: all 0.2s; border: 2px solid var(--primary); text-decoration: none;
+    }
+    .btn-mfg { background: transparent; color: var(--primary); }
+    .btn-mfg:hover { background: var(--primary); color: white; }
+    .btn-con { background: var(--primary); color: white; }
+    .btn-con:hover { background: var(--primary-hover); }
+
+    /* Application Portal */
+    #app-screen { display: none; width: 100%; min-height: 100vh; background: #f8fafc; position: absolute; top: 0; left: 0; z-index: 20; padding-bottom: 50px; }
+    nav { background: #ffffff; padding: 15px 40px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+    .logo { font-size: 1.5rem; font-weight: 700; color: var(--primary); cursor: pointer; }
+    
+    .app-container { display: none; max-width: 1000px; margin: 40px auto; padding: 0 20px; animation: fadeIn 0.3s ease-in; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    
+    .app-card { background: #ffffff; padding: 40px; border-radius: 16px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); text-align: center; border: 1px solid #e2e8f0; }
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+    
+    /* Forms */
+    label { display: block; text-align: left; font-weight: 600; margin-bottom: 5px; color: #334155; font-size: 0.9rem; }
+    input, select { width: 100%; padding: 12px; font-size: 1rem; border: 2px solid #e2e8f0; border-radius: 8px; margin-bottom: 15px; outline: none; background: #fff; }
+    input:focus, select:focus { border-color: var(--primary); }
+    
+    .app-btn { background: var(--primary); color: white; border: none; padding: 14px 24px; font-size: 1rem; font-weight: 600; border-radius: 8px; cursor: pointer; width: 100%; }
+    .app-btn.outline { background: transparent; color: var(--primary); border: 2px solid var(--primary); }
+    .app-btn:hover { opacity: 0.9; }
+
+    .result-box { display: none; text-align: left; background: #f0fdf4; padding: 20px; border-radius: 8px; border-left: 5px solid var(--primary); margin-top: 20px; }
+    .qr-img { display: none; margin: 20px auto; max-width: 200px; border-radius: 8px; border: 1px solid #e2e8f0; }
+    #reader { width: 100%; max-width: 400px; margin: 0 auto; border-radius: 8px; overflow: hidden; }
+  </style>
+</head>
+<body>
+
+  <!-- VIEW 1: CREATIVE HOME PAGE -->
+  <div id="home-screen">
+    <div class="main-card">
+      <header class="card-header"><div>♻️ Waste Passport MVP</div></header>
+      <main class="card-body">
+        <div class="hero-left"><h1 class="hero-title">WASTE<br>PASSPORT</h1></div>
+        <div class="hero-image-container">
+          <img src="wp.jpg" alt="Waste Passport Scan Graphic">
+        </div>
+        <div class="hero-text-right">
+          <p><strong>Scan • Know • Dispose Right</strong><br><br>Shifting the burden of recycling knowledge from the consumer to the product itself. Select your portal below to begin.</p>
+          <div class="btn-group">
+            <button class="btn-home btn-mfg" onclick="openApp('mfg-login')">🏭 I am a Manufacturer</button>
+            <button class="btn-home btn-con" onclick="openApp('consumer-portal')">🌱 I am a Consumer</button>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <!-- VIEW 2: APPLICATION SCREENS -->
+  <div id="app-screen">
+    <nav>
+      <a class="logo" onclick="openApp('home')">♻️ Waste Passport</a>
+      <button class="app-btn" onclick="openApp('home')" style="width: auto; padding: 8px 16px;">Back to Home</button>
+    </nav>
+
+    <!-- Manufacturer Login -->
+    <div id="mfg-login" class="app-container">
+      <div class="app-card" style="max-width: 500px; margin: 0 auto;">
+        <h2 style="margin-bottom: 10px;">Manufacturer Portal</h2>
+        <p style="color: #64748b; margin-bottom: 20px;">Please enter your authorized Manufacturer ID.</p>
+        <p style="font-size: 0.8rem; color: #94a3b8; margin-top: -10px; margin-bottom: 20px;">(Hint: Type <b>ADMIN123</b>)</p>
+        <input type="password" id="mfgIdInput" placeholder="Enter Manufacturer ID" />
+        <button class="app-btn" onclick="loginMfg()">Access Dashboard</button>
+      </div>
+    </div>
+
+    <!-- Manufacturer Dashboard (UPDATED WITH FORM) -->
+    <div id="mfg-dash" class="app-container">
+      <div class="app-card" style="max-width: 600px; margin: 0 auto; text-align: left;">
+        <h2 style="margin-bottom: 10px; text-align: center;">Register New Product</h2>
+        <p style="color: #64748b; margin-bottom: 20px; text-align: center;">Enter product details to create a new Waste Passport and generate its QR code.</p>
+        
+        <div class="grid-2" style="gap: 15px;">
+          <div>
+            <label>Product SKU (ID)</label>
+            <input type="text" id="mfgSku" placeholder="e.g. WP-NEW-001" />
+          </div>
+          <div>
+            <label>Product Name</label>
+            <input type="text" id="mfgName" placeholder="e.g. Smart Watch" />
+          </div>
+        </div>
+
+        <label>Waste Category</label>
+        <select id="mfgCat">
+          <option>E-Waste</option>
+          <option>Plastic/Polymers</option>
+          <option>Glass</option>
+          <option>Paper/Cardboard</option>
+          <option>Metal</option>
+          <option>Others</option>
+        </select>
+        
+        <label>Materials (comma separated)</label>
+        <input type="text" id="mfgMat" placeholder="e.g. Lithium-ion, Aluminum, Glass" />
+        
+        <label>Disposal Instructions</label>
+        <input type="text" id="mfgInst" placeholder="e.g. Remove battery before recycling" />
+        
+        <label>Collection Point</label>
+        <input type="text" id="mfgDrop" placeholder="e.g. Local E-Waste Facility" />
+
+        <button class="app-btn" onclick="registerProduct()" id="saveBtn">Save Product & Generate QR</button>
+        
+        <div style="text-align: center;">
+          <p id="mfgSuccessMsg" style="display:none; color: var(--primary); font-weight: bold; margin-top: 15px;">✅ Product Saved to Database!</p>
+          <img id="mfgQrImage" class="qr-img" alt="Generated QR" />
+          <!--Add this new button right below the image-->
+          <img id="mfgQrImage" class="qr-img" alt="Generated QR" />
+          <button id="downloadQrBtn" class="app-btn outline" onclick="downloadQR()" style="display:none; margin-top: 15px;">📥 Download QR Code for Printing</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Consumer Portal (Remains the same as before) -->
+    <div id="consumer-portal" class="app-container">
+      <div style="text-align: center; margin-bottom: 40px;">
+        <h1 style="color: #1f2937; font-size: 2.5rem;">Small Actions. <span style="color: var(--primary);">Big Impact.</span></h1>
+        <p style="font-size: 1.1rem; color: #64748b; margin-top: 10px;">Scan a QR code or ask AI how to dispose of your waste.</p>
+      </div>
+      <div class="grid-2">
+        <div class="app-card">
+          <h3 style="margin-bottom: 15px;">Lookup Passport</h3>
+          <button class="app-btn outline" onclick="startScanner()" style="margin-bottom: 15px;">📷 Scan QR Code</button>
+          <div id="reader"></div> 
+          <p style="margin: 15px 0; color: #94a3b8;">— OR —</p>
+          <input type="text" id="consumerIdInput" placeholder="Enter Product ID manually..." />
+          <button class="app-btn" onclick="fetchPassport()">Search Passport</button>
+          <div id="passportResult" class="result-box" style="display: none;">
+            <h4 id="resName" style="font-size: 1.2rem; margin-bottom: 10px; color: var(--primary);"></h4>
+            <p><strong>Category:</strong> <span id="resCat"></span></p>
+            <p><strong>Instructions:</strong> <span id="resInst"></span></p>
+            <p><strong>Materials:</strong> <span id="resMat"></span></p>
+            <p><strong>Drop-off:</strong> <span id="resDrop"></span></p>
+          </div>
+        </div>
+        <div class="app-card">
+          <h3 style="margin-bottom: 15px;">Ask AI Assistant</h3>
+          <p style="font-size: 0.9rem; color: #64748b; margin-bottom: 15px;">Have older waste without a passport? Describe it below.</p>
+          <input type="text" id="aiQueryInput" placeholder="e.g. Broken laptop with battery" />
+          <button class="app-btn" onclick="askAI()" id="aiBtn">Classify Waste</button>
+          <div id="aiResult" class="result-box" style="border-color: #3b82f6; background: #eff6ff;">
+            <h4 id="aiItem" style="font-size: 1.2rem; margin-bottom: 10px;"></h4>
+            <p><strong>Category:</strong> <span id="aiCat"></span></p>
+            <p><strong>How to separate:</strong> <span id="aiSep"></span></p>
+            <p><strong>Action:</strong> <span id="aiAct"></span></p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const API_BASE = 'http://127.0.0.1:5000/api';
+    let html5QrcodeScanner;
+
+    function openApp(viewId) {
+      if (html5QrcodeScanner) { try { html5QrcodeScanner.clear(); } catch(e) {} }
+      if (viewId === 'home') {
+        document.getElementById('app-screen').style.display = 'none';
+        document.getElementById('home-screen').style.display = 'flex';
+      } else {
+        document.getElementById('home-screen').style.display = 'none';
+        document.getElementById('app-screen').style.display = 'block';
+        document.querySelectorAll('.app-container').forEach(el => el.style.display = 'none');
+        document.getElementById(viewId).style.display = 'block';
+      }
+    }
+
+    function loginMfg() {
+      if (document.getElementById('mfgIdInput').value === 'ADMIN123') {
+        openApp('mfg-dash');
+        document.getElementById('mfgIdInput').value = ''; 
+      } else {
+        alert('Invalid Manufacturer ID. (Try: ADMIN123)');
+      }
+    }
+
+    // NEW LOGIC: Save Product AND Generate QR
+    async function registerProduct() {
+      const id = document.getElementById('mfgSku').value.trim();
+      const name = document.getElementById('mfgName').value.trim();
+      
+      if (!id || !name) { alert("Product SKU and Name are required!"); return; }
+      
+      const payload = {
+        id: id,
+        name: name,
+        category: document.getElementById('mfgCat').value,
+        materials: document.getElementById('mfgMat').value,
+        instructions: document.getElementById('mfgInst').value,
+        collectionPoint: document.getElementById('mfgDrop').value
+      };
+
+      const btn = document.getElementById('saveBtn');
+      btn.innerText = "Saving...";
+
+      try {
+        // Send data to the new Python route
+        await fetch(`${API_BASE}/passport/add`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        
+        // Generate and display the QR Code
+        const img = document.getElementById('mfgQrImage');
+        img.src = `${API_BASE}/qr/${id}?t=${Date.now()}`;
+        img.style.display = 'block';
+        document.getElementById('mfgSuccessMsg').style.display = 'block';
+        img.style.display = 'block';
+        document.getElementById('mfgSuccessMsg').style.display = 'block';
+        document.getElementById('downloadQrBtn').style.display = 'block'; 
+        
+      } catch (error) {
+        alert("Failed to connect to Python backend. Is app.py running?");
+      } finally {
+        btn.innerText = "Save Product & Generate QR";
+      }
+    }
+
+    // Consumer Logic
+    async function fetchPassport() {
+      const id = document.getElementById('consumerIdInput').value.trim();
+      if (!id) return;
+      if (id.includes('/')){
+        id = id.split('/').pop();
+        document.getElementById('consumerIdInput').value = id;
+      }
+      try {
+        const res = await fetch(`${API_BASE}/passport/${id}`);
+        if (!res.ok) throw new Error("Not Found");
+        const data = await res.json();
+        document.getElementById('resName').innerText = data.name;
+        document.getElementById('resCat').innerText = data.category;
+        document.getElementById('resInst').innerText = data.instructions;
+        document.getElementById('resMat').innerText=Array.isArray(data.materials)? data.materials.join(', '):data.materials;
+        document.getElementById('resDrop').innerText = data.collectionPoint;
+        document.getElementById('passportResult').style.display = 'block';
+      } catch (error) {
+        alert("Passport not found!");
+      }
+    }
+
+    async function askAI() {
+      const query = document.getElementById('aiQueryInput').value.trim();
+      if (!query) return;
+      const btn = document.getElementById('aiBtn');
+      btn.innerText = "Analyzing..."; btn.disabled = true;
+      try {
+        const res = await fetch(`${API_BASE}/ai/classify`, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userQuery: query })
+        });
+        const data = await res.json();
+        document.getElementById('aiItem').innerText = data.detected_item || query;
+        document.getElementById('aiCat').innerText = data.waste_category;
+        document.getElementById('aiSep').innerText = data.separation_instructions;
+        document.getElementById('aiAct').innerText = data.action;
+        document.getElementById('aiResult').style.display = 'block';
+      } catch (e) {
+        alert("AI request failed.");
+      } finally {
+        btn.innerText = "Classify Waste"; btn.disabled = false;
+      }
+    }
+
+    function startScanner() {
+      html5QrcodeScanner = new Html5QrcodeScanner("reader", { fps: 10, qrbox: {width: 250, height: 250} }, false);
+      html5QrcodeScanner.render((decodedText) => {
+        document.getElementById('consumerIdInput').value = decodedText;
+        try{ html5QrcodeScanner.clear();} catch(e){}
+        setTimeout(()=>{
+            fetchPassport();
+        },300);
+      });
+    }
+    // Add this function at the bottom of your scripts
+    async function downloadQR() {
+      const img = document.getElementById('mfgQrImage');
+      try {
+        const response = await fetch(img.src);
+        const blob = await response.blob();
+        const localUrl = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = localUrl;
+        a.download = `Waste-Passport-${Date.now()}.png`; 
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(localUrl);
+        document.body.removeChild(a);
+      } catch (error) {
+        alert("Please right-click the QR code and select 'Save image as...'");
+      }
+    };
+    
+  </script>
+</body>
+</html>
